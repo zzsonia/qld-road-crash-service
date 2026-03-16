@@ -15,7 +15,6 @@ public class CrashApiClient {
 
     private final WebClient webClient;
 
-
     @Value("${qld.api.path}")
     private String apiPath;
 
