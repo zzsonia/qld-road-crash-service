@@ -1,0 +1,5 @@
+qld:
+  api:
+    base-url: https://www.data.qld.gov.au
+    path: /api/3/action/datastore_search
+    resource-id: e88943c0-5968-4972-a15f-38e120d72ec0
