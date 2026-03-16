@@ -1,9 +1,8 @@
 package com.example.qld_roadcrash_service.client;
 
-import com.example.qld_roadcrash_service.model.CrashSummary;
+import com.example.qld_roadcrash_service.model.ApiResponse;
 import com.example.qld_roadcrash_service.model.QldResponse;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
-
+import reactor.core.publisher.Mono;
 
 
 @Service
@@ -39,8 +38,6 @@ public class CrashApiClient {
 
     public QldResponse fetchCrashData(int limit, int offset) {
 
-
-
         URI uri = UriComponentsBuilder.newInstance()
                 .scheme("https")
                 .host("www.data.qld.gov.au")
@@ -53,26 +50,28 @@ public class CrashApiClient {
 
         log.info("Final API URL = {}", uri);
 
-        QldResponse response = webClient.get()
-                .uri(uri)
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, res ->
-                        res.bodyToMono(String.class)
-                                .map(body -> new RuntimeException("API error: " + body))
-                )
-                .bodyToMono(QldResponse.class)
-                .timeout(Duration.ofSeconds(10))
-                .block();
+        try {
 
-        if (response == null) {
-            throw new IllegalStateException("API returned null response.");
-        }
+            QldResponse response = webClient.get()
+                    .uri(uri)
+                    .retrieve()
 
-        if (response.result() == null || response.result().records().isEmpty()) {
-            throw new NoSuchElementException("No crash data returned from API.");
-        }
+                    .bodyToMono(QldResponse.class)
+                    .timeout(Duration.ofSeconds(10))
+                    .block();
 
-        return response;
+            if (response == null) {
+                throw new IllegalStateException("API returned null response.");
+            }
+
+            if (response.result() == null || response.result().records().isEmpty()) {
+                throw new NoSuchElementException("No crash data returned from API.");
+            }
+
+            return response;
+        }  catch (Exception e) {
+        throw new IllegalStateException("Failed to fetch crash data", e);
+    }
     }
 
 }
