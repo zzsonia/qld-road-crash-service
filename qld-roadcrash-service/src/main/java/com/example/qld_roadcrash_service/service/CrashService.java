@@ -34,6 +34,9 @@ public class CrashService {
 
             QldResponse response = crashApiClient.fetchCrashData(limit, offset);
 
+            System.out.println("🔥 Cache MISS → Fetching crash data from API");
+
+
             var result = response.result();
             var records = result.records();
 

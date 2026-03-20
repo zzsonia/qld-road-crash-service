@@ -6,6 +6,7 @@ import com.example.qld_roadcrash_service.model.ApiResponse;
 import com.example.qld_roadcrash_service.model.CrashSummary;
 import com.example.qld_roadcrash_service.model.QldResponse;
 import com.example.qld_roadcrash_service.service.CrashService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -76,7 +77,7 @@ public class CrashController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    private static final List<String> ALLOWED_SORTED_FIELDS= List.of("severity","month");
+    private static final List<String> ALLOWED_SORTED_FIELDS= List.of("severity","location");
 
     private void validateSortBy(String sortBy){
         if(!ALLOWED_SORTED_FIELDS.contains(sortBy.toLowerCase())){
