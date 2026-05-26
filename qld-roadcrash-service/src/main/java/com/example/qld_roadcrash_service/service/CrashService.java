@@ -3,9 +3,10 @@ package com.example.qld_roadcrash_service.service;
 import com.example.qld_roadcrash_service.client.CrashApiClient;
 import com.example.qld_roadcrash_service.model.CrashSummary;
 import com.example.qld_roadcrash_service.model.QldResponse;
-import com.example.qld_roadcrash_service.model.Result;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,10 +17,11 @@ public class CrashService {
 
     private final CrashApiClient crashApiClient;
 
+    private static final Logger log = LoggerFactory.getLogger(CrashService.class);
+
     public CrashService(CrashApiClient crashApiClient) {
         this.crashApiClient = crashApiClient;
     }
-
 
     @Cacheable("qldCrashData")
     public List<CrashSummary> fetchAllCrashSummaries() {
@@ -28,39 +30,33 @@ public class CrashService {
         int offset = 0;
 
         List<CrashSummary> allCrash = new ArrayList<>();
-
+        log.info("🔥 Cache MISS → Fetching crash data from API");
         while (true) {
 
-
             QldResponse response = crashApiClient.fetchCrashData(limit, offset);
-
-            System.out.println("🔥 Cache MISS → Fetching crash data from API");
-
 
             var result = response.result();
             var records = result.records();
 
-             allCrash=records.stream()
+            var batch = records.stream()
                     .map(record -> new CrashSummary(
                             (String) record.get("Crash_Type"),
                             (String) record.get("Crash_Month"),
-
                             (String) record.get("Loc_Suburb"),
                             (String) record.get("Crash_Severity")
                     ))
                     .toList();
+            // accumulate batches instead of overwriting
+            allCrash.addAll(batch);
 
-
-
-
-        offset+=limit;
-//        if(offset >= response.result().total()){
-//            break;
-//        }
-
-            if(offset >= 5000){
+            int fetched = records.size();
+            int total = result.total();
+            // stop when we've fetched all records or received an empty batch
+            if (fetched == 0 || offset + fetched >= total) {
                 break;
             }
+
+            offset += limit;
         }
         return allCrash;
     }
@@ -79,8 +75,6 @@ public class CrashService {
             case "severity" -> c.severity();
             default -> c.severity();
          })).toList();
-
     }
-
 
 }
